@@ -1,0 +1,12 @@
+{
+  "name": "highlight",
+  "version": "0.1",
+   "manifest_version": 2,
+  "description": "Highlight select String just like IDE",
+  "content_scripts": [
+    {
+      "matches": ["*://*/*"],
+      "js": ["highlight.js"]
+    }
+  ]
+}

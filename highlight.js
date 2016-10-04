@@ -1,43 +1,85 @@
 //bug:如果选中.作为一个reg对象，会作为通配符把所有内容进行替换
-
+/**
+ *  2016年10月4日18:59:15 改进代码参考了https://github.com/qishibo/highlightCode/blob/master/highLight.js
+ * 
+ * */
 (function (window, document) {
-    var injectSpanClassName = "Extensionhihglight"
-    var injectSpanStyle = "background:RGB(51,139,247)"
-    var SelectString;
+    var injectSpanClassName = "ChromeExtensionHighlight"
+
+    function removeHighlight(){
+        var highlightNodes = document.querySelectorAll('span.'+injectSpanClassName);
+        for(var i = 0;i<highlightNodes.length;i++){
+            var highlightNode =  highlightNodes[i]
+            var parentNode = highlightNode.parentNode
+            parentNode.replaceChild(highlightNode.firstChild,highlightNode)
+            parentNode.normalize()
+        }
+    }
+
     function getSelectString() {
 
-        return document.getSelection() || null
+        return document.getSelection().toString() || ""
     }
-    /**
-     * 希望能设置高亮的范围，比如当前代码段
-     */
-    function highlight(SelectionObject) {
 
-        if (!SelectionObject || SelectionObject.toString().length == 0) {
-            return;
+
+
+
+
+    function RegExpHandle(string){
+        return new RegExp(string,'i')
+    }
+    function createHighlightNode(){
+        var node = document.createElement('span');
+        node.className = injectSpanClassName
+        return node
+    }
+    function mapNode(node, keyWord) {
+        if (node.nodeType === Node.TEXT_NODE) {
+            if (node.data.replace(/(\s)/g, '') != '') {
+                highlight(node, keyWord);
+            }
         }
-        SelectString = SelectionObject.toString()
-        var needToReplaceNode = SelectionObject.anchorNode.parentNode.parentNode
 
-        var replaceRe = new RegExp(SelectString, 'g');
-        //console.log("selectNode:" + SelectionObject.anchorNode.nodeName + "parentNode" + needToReplaceNode.tagName)
-        highlightSpan = "<span class=\"" + injectSpanClassName + "\" style=\"" + injectSpanStyle + "\">" + SelectString + "</span>"
-        needToReplaceNode.innerHTML = needToReplaceNode.innerHTML.replace(replaceRe, highlightSpan)
-        return;
+        else if (
+            (node.nodeType === Node.ELEMENT_NODE) &&
+            node.childNodes &&
+            !/(script|style)/i.test(node.tagName) &&
+            !(node.tagName === 'SPAN' && node.className === injectSpanClassName)
+        ) {
+            for (var i = 0; i < node.childNodes.length; i++) {
+                mapNode(node.childNodes[i], keyWord);
+            }
+        }
     }
-    function removeHighlight(){
-        var injectElements = document.querySelectorAll('.Extensionhihglight')
-        injectElements.forEach(item=>{
-            item.removeAttribute("style");
-        })
+    function highlight(textNode,selectString) {
+
+        var match = textNode.data.match(RegExpHandle(selectString))
+        if(match === null){
+            return ;
+        }
+        console.log("节点匹配到数据")
+        var haveSelectStringNode = textNode.splitText(match.index);
+        haveSelectStringNode.splitText(match[0].length);
+        var selectStringNode = haveSelectStringNode
+        var highlightNode = createHighlightNode()
+        highlightNode.appendChild(selectStringNode.cloneNode(true))
+        selectStringNode.parentNode.replaceChild(highlightNode,selectStringNode)  
     }
-    document.body.addEventListener('mouseup', () => {
-        removeHighlight()
-        var SelectionObject = getSelectString()
-        highlight(SelectionObject)
-    }, false)
 
 
+     function init(){
+         document.body.addEventListener('dblclick', (event) => {
+             var selectString = getSelectString();
+             if(selectString!=""&&selectString.length>0){
+                 console.log(selectString)
+                 removeHighlight()
+                 mapNode(document.body,selectString)
+             }
 
+         }, false)
+     }
+
+
+init()
 
 })(window, document)

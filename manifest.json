@@ -6,7 +6,8 @@
   "content_scripts": [
     {
       "matches": ["*://*/*"],
-      "js": ["highlight.js"]
+      "js": ["highlight.js"],
+      "css":["highlight.css"]
     }
   ]
 }
